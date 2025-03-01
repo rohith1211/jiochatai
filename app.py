@@ -4,17 +4,18 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sentence_transformers import SentenceTransformer
 import chromadb
-import google.generativeai as genai  # Import Google Gemini API
-from fastapi.middleware.cors import CORSMiddleware  # For enabling CORS
+import google.generativeai as genai  
+from fastapi.middleware.cors import CORSMiddleware  
 from typing import List
+from mangum import Mangum  # Wrap FastAPI for Vercel Serverless
 
 # Initialize FastAPI app
 app = FastAPI()
 
-# Add CORS middleware if frontend and backend are on different ports
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins or specify frontend URL here
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,7 +29,7 @@ client = chromadb.PersistentClient(path="db")
 collection = client.get_collection("sentence_embeddings_collection")
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
-# Set up Gemini API Key (replace "your-gemini-api-key" with your actual API key)
+# Set up Gemini API Key
 genai.configure(api_key="AIzaSyBnqcQvTrdRZqGKw_ajWpMfvzda5EdIZFc")
 
 # Initialize chat history and context variables
@@ -47,7 +48,7 @@ def query_database(query, top_k=1, context_range=5):
     query_embedding = torch.nn.functional.normalize(query_embedding, p=2, dim=0).tolist()
     results = collection.query(query_embeddings=[query_embedding], n_results=top_k)
     all_sentences = [metadata["sentence"] for metadata in collection.get()["metadatas"]]
-    
+
     matched_sentences = []
     for result in results["metadatas"][0]:
         matched_sentence = result["sentence"]
@@ -67,24 +68,21 @@ def generate_ai_response(query, context, chat_history):
 - Answer queries using only the provided context.  
 - If the information is unavailable, respond with:  
   *"I'm sorry, but I couldn't find that information in the provided context."*  
-- If a question is unclear,and not avaiable politely ask:  
+- If a question is unclear and not available, politely ask:  
   *"Could you be more specific?"*  
 - Keep responses direct, helpful, and professional while maintaining a warm tone.  
 - Avoid unnecessary pleasantries and focus on efficient assistance."""
 
     if len(chat_history) > 0:
-        prompt = prompt + '\n' + "This is the previous exchange you had with the user" + '\n' + chat_history
+        prompt += '\n' + "This is the previous exchange you had with the user" + '\n' + chat_history
 
-    prompt = prompt + '\n \n' + f"Context: {context}"
-
-    prompt = prompt + '\n \n' + "Based on the above instructions and context, respond to the query below."
-
-    prompt = prompt + '\n \n' + f"Query: {query}"
-
-    prompt = prompt + "Your response: "
+    prompt += '\n \n' + f"Context: {context}"
+    prompt += '\n \n' + "Based on the above instructions and context, respond to the query below."
+    prompt += '\n \n' + f"Query: {query}"
+    prompt += "Your response: "
     
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")  # Use the desired Gemini model
+        model = genai.GenerativeModel("gemini-1.5-flash")  
         response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
@@ -128,6 +126,5 @@ async def send_message(request: Request):
 
     return JSONResponse({"response": "No message received!"})
 
-
-if __name__ == '__main__':
-    app.run(debug=True)
+# Convert FastAPI app to a handler for Vercel Serverless
+handler = Mangum(app)
