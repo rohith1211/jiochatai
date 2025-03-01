@@ -6,7 +6,6 @@ from sentence_transformers import SentenceTransformer
 import chromadb
 import google.generativeai as genai  # Import Google Gemini API
 from fastapi.middleware.cors import CORSMiddleware  # For enabling CORS
-import uuid  # Import for unique ID generation
 from typing import List
 
 # Initialize FastAPI app

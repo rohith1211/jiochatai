@@ -1,6 +1,5 @@
 venv/
 test
-scraped_data/
 db/
 testscrape.py
 __pycache__/
