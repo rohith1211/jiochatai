@@ -70,11 +70,20 @@ for index in range(len(questions)):
 
 # Save data to CSV
 csv_filename = os.path.join(output_folder, "scraped_faq_data.csv")
-
 df = pd.DataFrame(faq_data)
 df.to_csv(csv_filename, index=False)
-
 logging.info(f"Data saved to CSV file: {csv_filename}")
+
+# Save the data into a TXT file (line by line)
+txt_filename = os.path.join(output_folder, 'scraped_faq_data.txt')
+with open(txt_filename, 'w', encoding='utf-8') as f:
+    for index, row in df.iterrows():
+        question = row['Question']
+        answer = row['Answer']
+        # Write each question and answer on a new line
+        f.write(f"Question: {question}\nAnswer: {answer}\n\n")
+logging.info(f"Data saved to TXT file: {txt_filename}")
+
 
 # Close the browser
 driver.quit()

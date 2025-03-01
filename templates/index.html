@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JioPay Chatbot</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+        :root {
+            --text-color: #FFFFFF;
+            --icon-color: #ACACBE;
+            --icon-hover-bg: #5b5e71;
+            --placeholder-color: #dcdcdc;
+            --outgoing-chat-bg: #343541;
+            --incoming-chat-bg: #444654;
+        }
+        body {
+            background: var(--outgoing-chat-bg);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .header {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 10px 20px;
+            background-color: var(--incoming-chat-bg);
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            gap: 10px;
+            margin-bottom: 10px; /* Increased margin to create space */
+        }
+        .header img {
+            width: 40px; /* Adjust width as needed */
+            height: 40px; /* Adjust height as needed */
+            border-radius: 50%; /* Optional: If you want the logo to be circular */
+            animation: none; /* Remove spin animation if not needed */
+        }
+        @keyframes logo-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .header h1 {
+            font-size: 24px;
+            animation: fade-in 1s ease-in-out;
+        }
+        @keyframes fade-in {
+            0% { opacity: 0; transform: translateX(-20px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+        .input-container {
+            width: 90%;
+            max-width: 1000px;
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            margin: 0 auto;
+            background-color: var(--incoming-chat-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        #query {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            outline: none;
+            background-color: var(--outgoing-chat-bg);
+            color: var(--text-color);
+        }
+        #search-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--icon-hover-bg);
+            color: var(--text-color);
+            cursor: pointer;
+        }
+        #search-btn:hover {
+            background-color: var(--text-color);
+            color: var(--outgoing-chat-bg);
+        }
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            margin: 0 auto 10px; /* Increased margin below the chat container */
+            width: 90%;
+            max-width: 1000px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background-color: var(--incoming-chat-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .chat-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .chat-container::-webkit-scrollbar-thumb {
+            background: var(--icon-hover-bg);
+            border-radius: 4px;
+        }
+        .chat {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .chat.outgoing {
+            justify-content: flex-end;
+        }
+        .chat.incoming {
+            justify-content: flex-start;
+        }
+        .chat-content {
+            max-width: 60%;
+            padding: 10px 10px;
+            border-radius: 10px;
+            line-height: 1.4;
+            background-color: var(--incoming-chat-bg);
+            color: var(--text-color);
+            margin-bottom: 1px; /* Add some spacing between message and context */
+        }
+        .context {
+            font-size: 14px;
+            color: #b0b0b0;
+            margin-top: 5px; /* Optional, fine-tunes spacing */
+            display: block; /* Ensure it's on a new line */
+        }
+        .chat.outgoing .chat-content {
+            background-color: var(--outgoing-chat-bg);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header with logo and title -->
+    <div class="header">
+        <h1>JioPay Chatbot</h1>
+    </div>
+    
+    <!-- Chat container -->
+    <div class="chat-container" id="chat-container"></div>
+
+    <!-- Input box -->
+    <div class="input-container">
+        <input type="text" id="query" placeholder="Enter your message..." onkeyup="if (event.key === 'Enter') sendQuery()">
+        <button id="search-btn" onclick="sendQuery()">Send</button>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById("chat-container");
+
+        // Typing effect for bot messages
+        const typeText = (element, text, delay = 50) => {
+            let index = 0;
+            const interval = setInterval(() => {
+                element.textContent += text[index];
+                index++;
+                if (index >= text.length) clearInterval(interval);
+            }, delay);
+        };
+
+        // Append message to the chat container
+        const appendMessage = (message, sender = 'bot', context = null, isTyping = false) => {
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("chat", sender === "user" ? "outgoing" : "incoming");
+        
+        const chatContent = document.createElement("div");
+        chatContent.classList.add("chat-content");
+
+        if (isTyping) {
+            chatContent.textContent = "Typing...";
+            messageDiv.appendChild(chatContent);
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTo(0, chatContainer.scrollHeight);
+            return chatContent;
+        }
+
+        if (sender === "bot") {
+            chatContent.textContent = message; // Display bot response only
+        } else {
+            chatContent.textContent = message; // Display user message only
+        }
+
+        messageDiv.appendChild(chatContent);
+        chatContainer.appendChild(messageDiv);
+        chatContainer.scrollTo(0, chatContainer.scrollHeight);
+    };
+
+        // Send query to the server and display the response
+        const sendQuery = async () => {
+            const queryInput = document.getElementById("query");
+            const userMessage = queryInput.value.trim();
+            if (!userMessage) return;
+
+            // Append user's message
+            appendMessage(userMessage, "user");
+            queryInput.value = "";
+
+            // Simulate bot typing
+            const typingIndicator = appendMessage("", "bot", null, true);
+
+            try {
+                // Send user message to the server
+                const response = await fetch("/send_message", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: userMessage }),
+                });
+                const data = await response.json();
+
+                // Replace typing indicator with the bot's message
+                typingIndicator.textContent = "";
+                typingIndicator.remove();
+                appendMessage(data.response, "bot", data.context || null);
+            } catch (error) {
+                console.error("Error fetching bot response:", error);
+                typingIndicator.textContent = "Error: Unable to connect to server.";
+            }
+        };
+    </script>
+</body>
+</html>
