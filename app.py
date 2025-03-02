@@ -124,6 +124,3 @@ async def send_message(request: Request):
         return JSONResponse({"response": bot_response, "context": matched_context})
 
     return JSONResponse({"response": "No message received!"})
-
-if __name__ == '__main__':
-    app.run(debug=True)
