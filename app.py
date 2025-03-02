@@ -29,7 +29,7 @@ collection = client.get_collection("sentence_embeddings_collection")
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # Set up Gemini API Key
-genai.configure(api_key="AIzaSyBnqcQvTrdRZqGKw_ajWpMfvzda5EdIZFc")
+genai.configure(api_key="geminiapikey")
 
 # Initialize chat history and context variables
 chat_history = []
