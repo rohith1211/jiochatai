@@ -7,7 +7,6 @@ import chromadb
 import google.generativeai as genai  
 from fastapi.middleware.cors import CORSMiddleware  
 from typing import List
-from mangum import Mangum  # Wrap FastAPI for Vercel Serverless
 
 # Initialize FastAPI app
 app = FastAPI()
@@ -126,5 +125,5 @@ async def send_message(request: Request):
 
     return JSONResponse({"response": "No message received!"})
 
-# Convert FastAPI app to a handler for Vercel Serverless
-handler = Mangum(app)
+if __name__ == '__main__':
+    app.run(debug=True)
